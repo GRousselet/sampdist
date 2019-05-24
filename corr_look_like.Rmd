@@ -1,0 +1,237 @@
+---
+title: "What correlations look like"
+author: "Jan Vanhove"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    number_sections: no
+    toc: yes
+    toc_depth: 2
+---
+
+Adapt code from http://janhove.github.io/RCode/plot_r.R to show fewer plots (only meant as an illustration)
+See http://janhove.github.io/teaching/2016/11/21/what-correlations-look-like
+
+# Dependencies
+```{r message=FALSE, warning=FALSE}
+library(tibble)
+library(ggplot2)
+```
+
+```{r}
+sessionInfo()
+```
+
+
+# Define function to compute y vector
+Largely copy-pasted from
+http://stats.stackexchange.com/questions/15011/generate-a-random-variable-with-a-defined-correlation-to-an-existing-variable/15040#15040
+
+```{r}
+plot_r2 <- function(r = 0.6, n = 50, showdata = FALSE) {
+  
+  # Function for computing y vector.
+  # Largely copy-pasted from
+  # http://stats.stackexchange.com/questions/15011/generate-a-random-variable-with-a-defined-correlation-to-an-existing-variable/15040#15040
+  
+  compute.y <- function(x, y, r) {
+    theta <- acos(r)
+    X     <- cbind(x, y)                              # matrix
+    Xctr  <- scale(X, center = TRUE, scale = FALSE)   # centered columns (mean 0)
+    
+    Id   <- diag(n)                                   # identity matrix
+    Q    <- qr.Q(qr(Xctr[, 1, drop = FALSE]))         # QR-decomposition, just matrix Q
+    P    <- tcrossprod(Q)          # = Q Q'           # projection onto space defined by x1
+    x2o  <- (Id - P) %*% Xctr[, 2]                    # x2ctr made orthogonal to x1ctr
+    Xc2  <- cbind(Xctr[, 1], x2o)                     # bind to matrix
+    Y    <- Xc2 %*% diag(1 / sqrt(colSums(Xc2 ^ 2)))  # scale columns to length 1
+    
+    y <- Y[, 2] + (1 / tan(theta)) * Y[, 1]     # final new vector
+    # Additional step: constrain x, y between 0 and 1
+    y <- y - min(y)
+    y <- y/max(y)
+    return(y)
+  }
+  
+  
+  # Graph settings
+  op <- par(no.readonly = TRUE)
+  par(
+    las = 1,
+    mfrow = c(2, 3),
+    mar = c(4, 4, 4.5, 2.5),
+    oma = c(0, 0, 3.5, 0),
+    cex.main = 1.3,
+    cex.lab = 1.5,
+    cex.axis = 1.2,
+    cex.sub = 1.5,
+    tck = -0.02
+  )
+  
+  # Case 1: Textbook case with normal x distribution and normally distributed residuals
+  x <- rnorm(n)           # specify x distribution
+  x <- x - min(x)
+  x <- x/max(x)
+  y <- rnorm(n)           # specify y distribution
+  y <- compute.y(x, y, r) # recompute y to fit with x and r
+  plot(                   # plot
+    x,
+    y,
+    ylab = "",
+    xlab = "",
+    main = paste("(A) Bivariate normal", sep = "")
+  )
+  abline(lm(y ~ x), col = "dodgerblue3")
+  
+  # Case 4: Skewed x distribution (negative)
+  x <- rlnorm(n, 5) * -1 + 5000
+  x <- x - min(x)
+  x <- x/max(x)
+  y <- rnorm(n)
+  y <- compute.y(x, y, r)
+  plot(
+    x,
+    y,
+    ylab = "",
+    xlab = "",
+    main = paste("(B) Skewed predictor, but outlier caused\nby same mechanism as other data", sep = "")
+  )
+  abline(lm(y ~ x), col = "dodgerblue3")
+  
+  # Case 10: Sinusoid relationship
+  x <- runif(n,-2 * pi, 2 * pi)
+  y <- sin(x) + rnorm(n, sd = 0.2)
+  x <- x - min(x)
+  x <- x/max(x)
+  y <- compute.y(x, y, r)
+  plot(
+    x,
+    y,
+    ylab = "",
+    xlab = "",
+    main = paste("(C) Nonlinear relationship", sep = "")
+  )
+  abline(lm(y ~ x), col = "dodgerblue3")
+  
+  # Case 11: A single positive outlier can skew the results.
+  x <- rnorm(n - 1)
+  x <- c(sort(x), 10)
+  x <- x - min(x)
+  x <- x/max(x)
+  y <- c(rnorm(n - 1), 15)
+  y <- compute.y(x, y, r)
+  plot(
+    x,
+    y,
+    ylab = "",
+    xlab = "",
+    main = paste("(D) A single positive outlier caused\n by a different mechanism as other data", sep = "")
+  )
+  abline(lm(y ~ x), col = "dodgerblue3")
+  
+  # Regression without outlier
+  group1 <- x[1:(n - 1)]
+  y1 <- y[1:(n - 1)]
+  
+  xseg1 <- seq(
+    from = min(group1),
+    to = max(group1),
+    length.out = 50
+  )
+  pred1 <- predict(lm(y1 ~ group1), newdata = data.frame(group1 = xseg1))
+  lines(xseg1, pred1, lty = 2, col = "firebrick2")
+  
+  # Case 13: Bimodal y: Actually two groups (e.g. control and experimental). Better to model them in multiple regression model.
+  x <- rnorm(n)
+  x <- x - min(x)
+  x <- x/max(x)
+  y <- c(rnorm(floor(n / 2), mean = -6), rnorm(ceiling(n / 2), 6))
+  y <- compute.y(x, y, r)
+  plot(
+    x,
+    y,
+    ylab = "",
+    xlab = "",
+    main = paste("(E) Bimodal residuals\n(important predictor missing?)", sep = "")
+  )
+  abline(lm(y ~ x), col = "dodgerblue3")
+  df13 <- data.frame(x, y)
+  
+  # Case 14: Two groups
+  # Create two groups within each of which
+  # the residual XY relationship is contrary to the overall relationship.
+  # This will often produce examples of Simpson's paradox.
+  x <- c(rnorm(floor(n / 2),-3), rnorm(ceiling(n / 2), 3))
+  x <- x - min(x)
+  x <- x/max(x)
+  y <- -sign(r)* 10 * x + rnorm(n, sd = 0.5) + c(rep(0, floor(n / 2)), rep(3 * sign(r), ceiling(n / 2)))   
+  
+  # Symbols / colours for each group
+  colour <- c(rep("blue", floor(n / 2)), rep("red", ceiling(n / 2)))
+  symbol <- c(rep(1, floor(n / 2)), rep(4, ceiling(n / 2)))
+  
+  y <- compute.y(x, y, r)
+  
+  plot(
+    x,
+    y,
+    ylab = "",
+    xlab = "",
+    pch = symbol,
+    main = paste("(F) Two groups with negative relationship\n(Simpson's paradox)", sep = "")
+  )
+  abline(lm(y ~ x), col = "dodgerblue3")
+  df14 <- data.frame(x, y)
+  
+  # Also add lines of regression within each group
+  
+  # Divide up y variable
+  group1 <- x[colour == "blue"]
+  group2 <- x[colour == "red"]
+  y1 <- y[colour == "blue"]
+  y2 <- y[colour == "red"]
+  
+  xseg1 <- seq(
+    from = min(group1),
+    to = max(group1),
+    length.out = 50
+  )
+  pred1 <- predict(lm(y1 ~ group1), newdata = data.frame(group1 = xseg1))
+  lines(xseg1, pred1, lty = 2, col = "firebrick2")
+  
+  xseg2 <- seq(
+    from = min(group2),
+    to = max(group2),
+    length.out = 50
+  )
+  pred2 <- predict(lm(y2 ~ group2), newdata = data.frame(group2 = xseg2))
+  lines(xseg2, pred2, lty = 2, col = "firebrick2")
+  
+  # Overall title
+  title(
+    paste("All correlations: r(", n, ") = ", r, sep = ""),
+    outer = TRUE,
+    cex.main = 2
+  )
+  par(op)
+}
+```
+
+# Make figure
+```{r, fig.height=6, fig.width=8}
+set.seed(123)
+plot_r2(r = 0.5, n = 30)
+```
+
+# Save figure
+```{r}
+set.seed(123)
+pdf("./figures/figure_scatterplots.pdf", width = 9, height = 6)
+plot_r2(r = 0.5, n = 30)
+dev.off()
+```
+
+
+
+
+

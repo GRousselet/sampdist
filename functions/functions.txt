@@ -1,0 +1,20 @@
+# Define quantile functions
+q1 <- function(x){
+  out <- hd(x, q = 0.25)
+}
+
+
+q2 <- function(x){
+  out <- hd(x, q = 0.5)
+}
+
+q3 <- function(x){
+  out <- hd(x, q = 0.75)
+}
+
+
+keeporder <- function(x){
+x <- as.character(x)
+x <- factor(x, levels=unique(x))
+x
+}
