@@ -1,7 +1,9 @@
 Reproducibility package for the article:
 
-**Using simulations to explore sampling distributions: an antidote to hasty and extravagant inferences**
+**Using simulations to explore sampling distributions: an antidote to hasty and extravagant inferences**  
 Rousselet G.A.
+
+OSF preprint: https://osf.io/f5q7r
 
 # Content
 
