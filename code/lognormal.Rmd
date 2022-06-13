@@ -1,0 +1,204 @@
+---
+title: "Sampling distributions from a lognormal population distribution"
+author: "Guillaume A. Rousselet"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    dev: cairo_pdf
+    fig_caption: no
+    number_sections: no
+    toc: yes
+    toc_depth: 2
+---
+
+# Dependencies
+```{r message=FALSE, warning=FALSE}
+library(ggplot2)
+source("./functions/theme_gar.txt") # define ggplot theme
+library(tibble)
+# library(cowplot)
+```
+
+```{r}
+sessionInfo()
+```
+
+# Population
+
+We define a lognormal population. See this [**blog post**](https://msalganik.wordpress.com/2017/01/21/making-sense-of-the-rlnorm-function-in-r/) on how to use lnorm functions in R.
+
+```{r}
+x <- seq(0, 5, 0.01)
+meanlog <- 0
+sdlog <- 0.5
+pop.dens <- dlnorm(x, meanlog = meanlog, sdlog = sdlog) # population density function
+pop.m <- exp(meanlog + sdlog^2 / 2) # population mean
+pop.sd <- sqrt( (exp(sdlog^2)-1)*exp(2*meanlog + sdlog^2) ) # population sd
+
+# exp(meanlog) # population median
+# exp(meanlog - sdlog^2) # population mode
+
+# test using finite population
+# pop <- rlnorm(1000000, meanlog, sdlog)
+# mean(pop)
+# sd(pop)
+
+# SEM
+# round(pop.sd / sqrt(10), digits = 3)
+# round(pop.sd / sqrt(20), digits = 3)
+# round(pop.sd / sqrt(50), digits = 3)
+
+df <- tibble(x = x, y = pop.dens)
+p <- ggplot(df, aes(x=x, y=y)) + theme_gar +
+ geom_line(size = 1.5) +
+  geom_vline(xintercept = pop.m) +
+  scale_x_continuous(breaks = seq(0, 5, .5)) +
+  labs(x = "Values", y = "Density") +
+  # SEM labels
+  geom_label(aes(x = 3, y = 0.75, 
+             label = "SEM(n=10) = 0.191"), 
+             size = 7
+            ) + 
+  geom_label(aes(x = 3, y = 0.60, 
+             label = "SEM(n=20) = 0.135"), 
+             size = 7
+            ) + 
+  geom_label(aes(x = 3, y = 0.45, 
+             label = "SEM(n=50) = 0.085"), 
+             size = 7
+            ) + 
+  ggtitle(paste0("Lognormal distribution (\U03BC=",round(pop.m,digits = 2),", \U03C3=",round(pop.sd, digits = 3),")"))
+p
+pA <- p
+```
+
+For a sample of n=10 observations, the standard error of the mean (SEM) is $\frac{sd}{\sqrt{n}}$ = `r round(pop.sd/sqrt(10), digits = 3)`.
+
+# Random samples
+
+We draw random samples of size n=10 from the population. Because of random sampling, the sample means can be close or far from the population mean. 
+
+```{r}
+set.seed(1) # reproducible result
+nsamp <- 10 # number of samples
+nt <- 10 # sample size: number of trials
+samp <- matrix(rlnorm(nsamp * nt, meanlog, sdlog), nrow = nsamp)
+
+df <- tibble(val = as.vector(samp),
+             Samples = rep(1:nsamp, nt))
+
+df2 <- tibble(val = apply(samp, 1, mean),
+              Samples = 1:nsamp)
+
+# illustrate sample
+p <- ggplot(df, aes(x = val, y = Samples)) + theme_gar +
+  geom_jitter(height = .15, alpha = 1,
+              shape = 21, fill = "grey", colour = "black") +
+  geom_segment(data = df2, 
+               aes(x=val, xend=val, y=Samples-0.3, yend=Samples+0.3),
+               size = 0.75) +
+  geom_vline(xintercept = pop.m) +
+  theme(panel.grid.minor.y = element_blank()) +
+  coord_cartesian(xlim = c(0, 4)) +
+  scale_x_continuous(breaks = seq(0, 5, .5)) +
+  scale_y_continuous(breaks = seq(1, 10, 1)) +
+  labs(x = "Values from independent trials",
+       y = "Random samples") +
+    ggtitle("Random samples of n = 10 trials")
+p
+pB <- p
+```
+
+# Sampling distributions
+
+The variability demonstrated in the previous section depends on sample size: with larger samples, the sample means tend to be closer to the population mean on average. Here we illustrate distributions of sample means, for 20000 simulations / experiments, in which we draw samples of different sizes. These distributions are called **sampling distributions**.
+
+## Simulation
+```{r}
+set.seed(21)
+nsim <- 20000 # number of iterations
+n <- 10
+sampd10 <- apply(matrix(rlnorm(n*nsim, meanlog, sdlog), nrow = nsim), 1, mean)
+n <- 20
+sampd20 <- apply(matrix(rlnorm(n*nsim, meanlog, sdlog), nrow = nsim), 1, mean)
+n <- 50
+sampd50 <- apply(matrix(rlnorm(n*nsim, meanlog, sdlog), nrow = nsim), 1, mean)
+```
+
+## Standard error of the mean (SEM)
+SEM is defined as the standard deviation of the sampling distribution of the sample mean.
+```{r}
+sd(sampd10) 
+sd(sampd20) 
+sd(sampd50) 
+```
+These values, should be very similar to the values obtained using the population standard deviation---this is the case:
+```{r}
+pop.sd / sqrt(10)
+pop.sd / sqrt(20)
+pop.sd / sqrt(50)
+```
+The two sets of values will converge with an increasingly large number of simulations.
+
+## Illustrate results
+```{r, fig.height=4, fig.width=10}
+# distributions
+df <- tibble(obs = c(sampd10, sampd20, sampd50),
+             cond = factor(c(rep(10, nsim),
+                             rep(20, nsim),
+                             rep(50, nsim)))
+             )
+
+# add labels with sd of each sampling distribution
+df.lab <- tibble(label = c(paste0("sd = ",round(sd(sampd10),digits = 3)), 
+                           paste0("sd = ",round(sd(sampd20), digits = 3)), 
+                           paste0("sd = ",round(sd(sampd50), digits = 3))),
+                 cond = factor(c(10, 20, 50)),
+                 x = c(1.7, 1.7, 1.7),
+                 y = c(1.5, 2, 4))
+
+# change facet labels
+labels <- c("10" = "n = 10", "20" = "n = 20", "50" = "n = 50")
+
+p <- ggplot(df, aes(x=obs)) + theme_gar +
+  geom_line(stat = "density", size = 1) +
+  facet_grid(cols = vars(cond), labeller=labeller(cond = labels)) +
+  labs(x = "Sample means", y = "Density") + 
+  geom_label(data = df.lab, 
+             aes(x = x, y = y, label = label),
+             size = 7) +
+  ggtitle("Sampling distributions")
+p
+pC <- p
+```
+
+# Summary figure
+
+About the Cairo package, see this [**blog post**](https://www.andrewheiss.com/blog/2017/09/27/working-with-r-cairo-graphics-custom-fonts-and-ggplot/).
+
+```{r, eval=FALSE, warning=FALSE}
+# combine panels into one figure
+pAB <- cowplot::plot_grid(pA, pB,
+                          labels = c("A", "B"),
+                          ncol = 2,
+                          nrow = 1,
+                          rel_widths = c(1, 1), 
+                          label_size = 20, 
+                          # hjust = -0.5, 
+                          scale = 1,
+                          align = 'h')
+
+cowplot::plot_grid(pAB, pC,
+                          labels = c("", "C"),
+                          ncol = 1,
+                          nrow = 2,
+                          rel_heights = c(1, 1), 
+                          label_size = 20, 
+                          # hjust = -0.5, 
+                          scale = 1)
+# save figure
+ggsave(filename=('./figures/figure_lognormal.pdf'),
+       width=15, height=10, device = cairo_pdf)
+# dev.off()
+```
+

@@ -6,7 +6,7 @@ Rousselet G.A.
 
 [[OSF repository]()] [[GitHub repository](https://github.com/GRousselet/sampdist)] [[PsyArXiv Preprint]()]
 
-The repository contains all of the [R](https://www.r-project.org/) code  used in the article. The code is best seen by running the RMarkdown notebooks, within [RStudio](https://www.rstudio.com/). 
+The repository contains all of the [R](https://www.r-project.org/) code  used in the article. The code is best seen by running the RMarkdown notebooks, within [RStudio](https://www.rstudio.com/).
 
 The code is released under the [MIT license](https://opensource.org/licenses/MIT). Copyright 2019, Guillaume A. Rousselet.
 
@@ -34,11 +34,11 @@ The notebooks contains code to reproduce the figures and analyses presented in t
 |`pc`|percent correct data|Figure 6 (figure_pc.pdf)|
 
 # R packages needed
-If you want to run the code in RStudio, you will need to install a few packages. 
+If you want to run the code in RStudio, you will need to install a few packages.
 
 To reproduce the figures only, you can install the required packages by typing this in the console:
 
-`install.packages(c("ggplot2", "tibble", "dplyr", "Rfast"))` 
+`install.packages(c("ggplot2", "tibble", "dplyr", "Rfast"))`
 
 Or you can navigate in the GUI to Tools > Install Packages...
 
@@ -54,11 +54,11 @@ then:
 
 To reproduce the summary figures, you also need `cowplot` to combine panels and `Cairo` to export pdf versions of figures with math notations:
 
-`install.packages("cowplot", "Cairo")` 
+`install.packages("cowplot", "Cairo")`
 
 Finally, if you decide to run the simulations, you will need `beepr` to get a little auditory reward:
 
-`install.packages("beepr")` 
+`install.packages("beepr")`
 
 # Additional R functions
 A few extra R functions are defined in `.txt` files, which are listed in the **Dependencies** section of the RMarkdown notebooks. Each notebook will install the appropriate functions for you; otherwise, in the console you can type `source(file.choose())` and select the relevant `.txt` file. In particular, the `akerd` file contains a function from Rand Wilcox, implementing an adaptive kernel density estimator. [functions.txt](https://github.com/GRousselet/articles/blob/master/bootstrap/functions/functions.txt) and [theme_gar.txt](https://github.com/GRousselet/articles/blob/master/bootstrap/functions/theme_gar.txt) contain custom code to set some ggplot2 parameters and to compute a few things. Other custom functions are defined in the notebooks.
