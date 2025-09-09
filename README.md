@@ -7,13 +7,12 @@ Rousselet G.A. (submitted)
 
 # Content
 
-|folder|description|location|
-|-----|-----|-----|
-|`code`|R `.Rmd` files to run simulations and create figures|OSF + GitHub|
-|`notebooks`|pdf versions of the code, with embedded figures|OSF|
-|`data`|simulation results needed to run the code|OSF + GitHub|
-|`figures`|all the figures used in the article, in pdf format|OSF|
-|`functions`|extra R functions defined in text files|OSF + GitHub|
+|folder|description|
+|-----|-----|
+|`code`|R `.Rmd` files to run simulations and create figures|
+|`data`|simulation results needed to run the code|
+|`docs`|html versions of the notebooks, with embedded figures|
+|`functions`|extra R functions defined in text files|
 
 # Notebooks
 
