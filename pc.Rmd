@@ -3,8 +3,10 @@ title: "Sampling distributions for percent correct data"
 author: "Guillaume A. Rousselet"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    fig_caption: no
+  # html_document:
+  github_document:
+    # dev: CairoPDF
+    # fig_caption: no
     number_sections: no
     toc: yes
     toc_depth: 2
@@ -15,11 +17,11 @@ output:
 library(ggplot2)
 source("./functions/theme_gar.txt") # define ggplot theme
 library(tibble)
-library(cowplot)
+# library(cowplot)
 source("./functions/akerd.txt")
 # install.packages("devtools")
 # devtools::install_github("GRousselet/rogme")
-library(rogme)
+library(rogme) # to get datasets
 library(beepr)
 library(Rfast) # to fit beta distribution using MLE
 ```
@@ -28,35 +30,14 @@ library(Rfast) # to fit beta distribution using MLE
 sessionInfo()
 ```
 
-# Relationship between PC and SE
+# Relationship between mean percent correct and variability
 
 The population mean percent correct and standard deviation are dependent: there is stronger variability at 50% correct and the variability decreases as the mean tends toward zero or 1.
-
-## Generate data from 1 participant, 10000 simulations/experiments.
-```{r}
-nsim <- 10000
-nt <- 100 # number of trials
-pc.seq <- seq(.1, .9, .1)
-sim.res <- matrix(NA, nrow = nsim, ncol = length(pc.seq))
-for(PC in 1:length(pc.seq)){
-  sim.res[,PC] <- rbinom(nsim, nt, pc.seq[PC]) / nt    
-}
-```
-
-### Illustrate results
-```{r}
-df <- tibble(pc = as.vector(sim.res),
-             m = factor(rep(pc.seq, each = nsim)))
-
-ggplot(df, aes(x = pc, group = m, colour = m)) + theme_gar +
-  geom_line(stat = "density", size = 1.5) +
-  labs(x = "Percent correct", y = "Density") +
-  scale_colour_viridis_d(option = "cividis")
-```
 
 ## Theoretical distributions
 
 Here we illustrate the theoretical relative probabilities of observing different proportions of correct responses for different true values. For instance, given that a participant is on average 10% correct, what is the distribution of the number of correct trials we can expect? For any given experiment, the number of correct trials ranges from roughly 0 to 20. If the population average is 50%, the values across experiments range from 45 to 65. 
+
 ```{r}
 # df <- tibble(x = seq(0, 100, 0.01))
 x <- seq(0, 100, 1)
@@ -77,20 +58,16 @@ df <- tibble(pc = rep(x,length(pc.seq)),
 
 p <- ggplot(df, aes(x = pc, y = dens, colour = cond)) + theme_gar +
   geom_line(size = 1.5) +
-  guides(colour = guide_legend(override.aes = list(size = 3),
+  guides(colour = guide_legend(override.aes = list(linewidth = 3),
                                title = "Population\nproportion correct")) +
   scale_colour_viridis_d(option = "cividis") + 
   scale_x_continuous(breaks = seq(0, 100, 10)) +
   labs(x = "Number of correct trials",
        y = "Density") +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
   ggtitle("Binomial PDFs for n = 100 trials")
-
-# for(PC in 1:length(pc.seq)){
-#   p <- p + stat_function(fun = dbinom, 
-#                          args = list(size = nt, prob = pc.seq[PC]),
-#                          size = 1.5,
-#                          colour = cc[PC]) 
-# }
 pA <- p
 p
 ```
@@ -99,7 +76,7 @@ Distributions are bounded and the variance varies with the mean, so this type of
 
 # Example of percent correct data from lexical decision dataset
 
-Percent correct data are not normaly distributed. In this example, participants tend to perform very well, with many averages above 90%. Some participants are not as good, leading to negative skewness. We illustrate the data and then fit a beta distribution. Then we move to a made-up example with an average of 70% correct.
+Percent correct data are not normaly distributed. In this example, participants tend to perform very well, with many averages above 90%. Some participants are not as good, leading to negative skewness. We illustrate the data and then fit a beta distribution. Then we move to a simulated example with an average of 70% correct.
 
 Data from the [French Lexicon Project](https://sites.google.com/site/frenchlexicon/results).
 Click on "French Lexicon Project trial-level results with R scripts.zip".
@@ -147,6 +124,9 @@ p <- ggplot(df, aes(x,y, group=Condition)) + theme_classic() +
         axis.title.x = element_text(size = 18),
         axis.text = element_text(size = 16, colour = "black"),
         axis.title.y = element_text(size = 18),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
         legend.key.width = unit(1.5,"cm"),
         legend.position = c(0.25,0.8),
         legend.title = element_text(size=16),
@@ -218,6 +198,9 @@ p <- ggplot(df, aes(x,y, group=Condition)) + theme_classic() +
         axis.title.x = element_text(size = 18),
         axis.text = element_text(size = 16, colour = "black"),
         axis.title.y = element_text(size = 18),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
         legend.key.width = unit(1.5,"cm"),
         legend.position = c(0.25,0.8),
         legend.title = element_text(size=16),
@@ -230,7 +213,7 @@ p
 ```
 
 Real and fitted data: normality assumption
-```{r}
+```{r, warning=FALSE}
 x.seq <- seq(0,1.5,0.001)
 fit.w.n <- normal.mle(flp.w)
 a.flp.w.f <- dnorm(x.seq, fit.w.n$param[1], sqrt(fit.w.n$param[2]))
@@ -255,6 +238,9 @@ p <- ggplot(df, aes(x,y, group=Condition)) + theme_classic() +
         axis.title.x = element_text(size = 18),
         axis.text = element_text(size = 16, colour = "black"),
         axis.title.y = element_text(size = 18),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
         legend.key.width = unit(1.5,"cm"),
         legend.position = c(0.25,0.8),
         legend.title = element_text(size=16),
@@ -277,7 +263,7 @@ x <- seq(0, 1, 0.1)
 alpha <- 20 # 10 # 5
 beta <- 8.56 # 4.28 # 2.14
 beta.m <- alpha/(alpha+beta)
-p <- ggplot(as.tibble(x), aes(x = x)) + theme_gar +
+p <- ggplot(tibble::enframe(x), aes(x = x)) + theme_gar +
   stat_function(fun = dbeta, 
                 args = list(shape1 = alpha, shape2 = beta),
                 size = 1.5) +
@@ -285,6 +271,9 @@ p <- ggplot(as.tibble(x), aes(x = x)) + theme_gar +
   scale_x_continuous(breaks = seq(0, 1, 0.1)) +
   labs(x = "Proportion correct",
        y = "Density") +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
   ggtitle(paste0("Beta distribution: alpha=",alpha,", beta=",beta,", mean=",round(beta.m,digits=3)))
 pB <- p
 p
@@ -355,6 +344,9 @@ sdev <- round(sd(samp_dist), digits = 2)
 ```{r}
 ggplot(tibble(x = samp_dist), aes(x = x)) + theme_gar +
   geom_line(stat = "density", size = 1.5) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
   labs(x = "Mean percent correct", y = "Density") +
   ggtitle(paste0("Group sampling distribution: m=",m," sd=",sdev))
 ```
@@ -392,6 +384,9 @@ sdev <- round(sd(samp_dist), digits = 2)
 ```{r}
 ggplot(tibble(x = samp_dist), aes(x = x)) + theme_gar +
   geom_line(stat = "density", size = 1.5) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
   labs(x = "Mean percent correct", y = "Density") +
   ggtitle(paste0("Group sampling distribution: m=",m," sd=",sdev))
 ```
@@ -428,6 +423,9 @@ sdev <- round(sd(samp_dist), digits = 2)
 ```{r}
 ggplot(tibble(x = samp_dist), aes(x = x)) + theme_gar +
   geom_line(stat = "density", size = 1.5) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
   labs(x = "Mean percent correct", y = "Density") +
   ggtitle(paste0("Group sampling distribution: m=",m," sd=",sdev))
 ```
@@ -441,7 +439,7 @@ round(mean(abs(samp_dist-0.7) >= 0.05)*100, digits = 1)
 ```
 
 ## Generate group data: full example
-```{r}
+```{r, eval=FALSE}
 set.seed(22222)
 
 nsim <- 20000
@@ -461,10 +459,14 @@ for(S in 1:nsim){
 samp_dist10 <- apply(sim.res[,1:10,], c(1,3), mean)
 samp_dist20 <- apply(sim.res[,1:20,], c(1,3), mean)
 samp_dist50 <- apply(sim.res[,1:50,], c(1,3), mean)
+
+save(samp_dist10, samp_dist20, samp_dist50, nt.seq, nsim,
+     file = "./data/pc_full_example.RData")
 ```
 
 ### Illustrate results
 ```{r}
+load("./data/pc_full_example.RData")
 
 df <- tibble(x = c(as.vector(samp_dist10),
                    as.vector(samp_dist20),
@@ -472,11 +474,16 @@ df <- tibble(x = c(as.vector(samp_dist10),
              np = factor(rep(c("10", "20", "50"), each = nsim * length(nt.seq))),
              nt = factor(rep(rep(nt.seq, each = nsim),3)))
 
+levels(df$np) <- c("10 participants", "20 participants", "50 participants")
+
 p <- ggplot(df, aes(x = x, colour = nt)) + theme_gar +
   geom_vline(xintercept = beta.m) +
   geom_line(stat = "density", size = 0.75) +
-  theme(legend.position = "bottom") +
-  guides(colour = guide_legend(override.aes = list(size = 3),
+  theme(legend.position = "bottom",
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  guides(colour = guide_legend(override.aes = list(linewidth = 3),
                                title = "Number of trials")) +
   scale_colour_viridis_d(option = "plasma", 
                          begin = 0, end = 0.7) + 
@@ -501,6 +508,104 @@ cowplot::plot_grid(pA, pB, pC, pD,
                     scale = 1)
 
 # save figure
-ggsave(filename=('./figures/figure_pc.pdf'),width=10,height=20)
+ggsave(filename=('./figures/fig_pc.tiff'),width=10, height=20, dpi=300)
 ```
 
+# For fun: illustrate beta distributions for 80% correct responses
+
+## Define illustration function
+```{r}
+gbeta <- function(x, alpha, beta){
+  beta.m <- alpha/(alpha+beta)
+p <- ggplot(as.tibble(x), aes(x = x)) + theme_gar +
+  stat_function(fun = dbeta, 
+                args = list(shape1 = alpha, shape2 = beta),
+                size = 1.5) +
+  geom_vline(xintercept = beta.m) +
+  scale_x_continuous(breaks = seq(0, 1, 0.1)) +
+  labs(x = "Proportion correct",
+       y = "Density") +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  ggtitle(paste0("Beta distribution: alpha=",alpha,", beta=",beta,", mean=",round(beta.m,digits=3)))
+p
+}
+```
+
+## Example 1
+```{r}
+x <- seq(0, 1, 0.1)
+alpha <- 4 
+beta <- 1
+p <- gbeta(x, alpha, beta)
+p
+```
+
+## Example 2
+```{r}
+x <- seq(0, 1, 0.1)
+alpha <- 6 
+beta <- 1.5
+p <- gbeta(x, alpha, beta)
+p
+```
+
+## Example 3
+```{r}
+x <- seq(0, 1, 0.1)
+alpha <- 8 
+beta <- 2
+p <- gbeta(x, alpha, beta)
+p
+```
+
+## Example 4
+```{r}
+x <- seq(0, 1, 0.1)
+alpha <- 16 
+beta <- 4
+p <- gbeta(x, alpha, beta)
+p
+```
+
+## Example 5
+```{r}
+x <- seq(0, 1, 0.1)
+alpha <- 40 
+beta <- 10
+p <- gbeta(x, alpha, beta)
+p
+```
+
+## 5 examples in one figure
+```{r}
+x.seq <- seq(0, 1, 0.001)
+alpha.seq <- c(4, 6, 8, 16, 40)
+beta.seq <- c(1, 1.5, 2, 4, 10)
+
+df <- tibble(x = rep(x.seq, length(alpha.seq)),
+             y = c(dbeta(x.seq, alpha.seq[1], beta.seq[1]),
+                   dbeta(x.seq, alpha.seq[2], beta.seq[2]),
+                   dbeta(x.seq, alpha.seq[3], beta.seq[3]),
+                   dbeta(x.seq, alpha.seq[4], beta.seq[4]),
+                   dbeta(x.seq, alpha.seq[5], beta.seq[5])),
+             param = rep(c("a4/b1","a6/b1.5","a8/b2","a16/b4","a40/b10"),
+                         each = length(x.seq)))
+
+df$param <- as.character(df$param)
+df$param <- factor(df$param, levels=unique(df$param))
+
+p <- ggplot(df, aes(x = x, y = y, colour = param)) + theme_gar +
+  geom_line(size = 1.5) +
+  geom_vline(xintercept = 0.8) +
+  scale_colour_viridis_d(end = 0.95) +
+  scale_x_continuous(breaks = seq(0, 1, 0.1)) +
+  labs(x = "Proportion correct",
+       y = "Density") +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  ggtitle("Beta distribution: mean=0.8")
+p
+```

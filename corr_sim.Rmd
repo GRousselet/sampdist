@@ -3,8 +3,10 @@ title: "Correlation estimation"
 author: "Guillaume A. Rousselet"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    number_sections: no
+  # html_document:
+  github_document:
+    # dev: CairoPDF
+    # number_sections: no
     toc: yes
     toc_depth: 2
     #latex_engine: xelatex
@@ -18,18 +20,21 @@ source('./functions/akerd.txt')
 library(ggplot2)
 library(tibble)
 library(cowplot)
+library(Cairo)
 library(beepr)
-# library(Cairo)
+```
 
+```{r}
+sessionInfo()
+```
+
+# Define mode function
+```{r}
 # https://www.r-bloggers.com/computing-the-mode-in-r/
 Mode <- function(x) {
   ux <- unique(x)
   ux[which.max(tabulate(match(x, ux)))]
 }
-```
-
-```{r}
-sessionInfo()
 ```
 
 # Check `cor()` function
@@ -81,8 +86,8 @@ out <- cor.test(variables[, 3], variables[, 4])
 df <- tibble(x=variables[, 3], y=variables[, 4])
 
 ggplot(data=df, aes(x=x, y=y)) + theme_classic() +
-  geom_point(shape=21, size=3, fill="yellow", alpha=0.8) +
   geom_smooth(method=lm) +
+  geom_point(shape=21, size=3, fill="grey10", alpha=0.8) +
   coord_cartesian(xlim=c(-2.5, 2.5), ylim=c(-2.5, 2.5)) +
   theme(plot.title = element_text(size=20),
         axis.title.x = element_text(size = 18),
@@ -92,7 +97,7 @@ ggplot(data=df, aes(x=x, y=y)) + theme_classic() +
         legend.position = "right",
         legend.text=element_text(size = 16),
         legend.title=element_text(size = 18),
-        panel.background = element_rect(fill="grey95")) +
+        panel.background = element_rect(fill="white")) +
   labs(x = "Variable 1", y = "Variable 2") +
   # guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
   #   title = "Precision \n(within +/-)")) + # change legend title
@@ -100,9 +105,10 @@ ggplot(data=df, aes(x=x, y=y)) + theme_classic() +
                  ", t=",round(out$statistic,digits = 2),
                  ", p=",round(out$p.value,digits = 4))) 
 ```
+
 Save figure
 ```{r, eval = FALSE}
-ggsave(filename='./figures/figure_rand_corr.pdf',width=7,height=5) 
+ggsave(filename='./figures/fig_rand_corr.tiff',width=7, height=5, dpi=300) 
 ```
 
 # Correlation estimates as a function of sample size
@@ -169,11 +175,14 @@ df[[2]] <- factor(df[[2]], levels=unique(df[[2]]))
 
 # make plot
 p <- ggplot(df, aes(x, Density)) + theme_classic() +
-          geom_line(aes(colour = SS), size = 1)  + 
+          geom_line(aes(colour = SS), linewidth = 1)  + 
           scale_color_viridis_d(option = "B", end = 0.9) + 
           theme(axis.title.x = element_text(size = 18),
                 axis.text = element_text(size = 14, colour = "black"),
                 axis.title.y = element_text(size = 18),
+                axis.text.y = element_blank(),
+                axis.ticks.y = element_blank(),
+                panel.grid.minor.y = element_blank(),
                 legend.key.width = unit(1.5,"cm"),
                 legend.text = element_text(size = 16),
                 legend.title = element_text(size = 18),
@@ -184,9 +193,9 @@ p <- ggplot(df, aes(x, Density)) + theme_classic() +
                              breaks = seq(-1, 1, 0.2)) +
   labs(x = "Correlation estimates", y = "Density") +
   # ggtitle("Correlation sampling distributions") +
-  # ggtitle("\u03c1=0") +
-  ggtitle("rho=0") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  ggtitle("\u03c1=0") +
+  # ggtitle("rho=0") +
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
         title="Sample size")) # change legend title
 p.sd <- p
 p
@@ -202,7 +211,7 @@ round(apply(res.r, 2, Mode), digits = 3)
 
 ## Correlations conditional on p values
 
-Reporting correlation results conditional on statistical significance (p<=0.05) leads to inflated effect size estimation in the literature. This estimation bias increases with lower sample sizes.
+Reporting correlation results conditional on statistical significance ($p\leq0.05$) leads to inflated effect size estimation in the literature. This estimation bias increases with lower sample sizes.
 
 ### Parameters
 ```{r}
@@ -270,7 +279,7 @@ save(kde.r.ori, kde.r.cond,
 beep(8)
 ```
 
-### Plot KDE of correlation estimates p<=0.05
+### Plot KDE of conditional correlation estimates 
 ```{r}
 # get data
 load("./data/rpval.kde.RData")
@@ -287,11 +296,14 @@ df[[2]] <- factor(df[[2]], levels=unique(df[[2]]))
 
 # make plot
 p <- ggplot(df, aes(x, Density)) + theme_classic() +
-          geom_line(aes(colour = SS), size = 1)  + 
+          geom_line(aes(colour = SS), linewidth = 1)  + 
           scale_color_viridis_d(option = "B", end = 0.9) + 
           theme(axis.title.x = element_text(size = 18),
                 axis.text = element_text(size = 14, colour = "black"),
                 axis.title.y = element_text(size = 18),
+                axis.text.y = element_blank(),
+                axis.ticks.y = element_blank(),
+                panel.grid.minor.y = element_blank(),
                 legend.key.width = unit(1.5,"cm"),
                 legend.text = element_text(size = 16),
                 legend.title = element_text(size = 18),
@@ -301,10 +313,10 @@ p <- ggplot(df, aes(x, Density)) + theme_classic() +
           scale_x_continuous(limits = c(-1, 1), 
                              breaks = seq(-1, 1, 0.2)) +
   labs(x = "Correlation estimates", y = "Density") +
-  # ggtitle("\u03c1=0: p\u22640.05") +
-  ggtitle("rho=0: p<=0.05") +
+  ggtitle("\u03c1=0: p\u22640.05") +
+  # ggtitle("rho=0: p<=0.05") +
   # ggtitle("Correlation sampling distributions") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
         title="Sample size")) # change legend title
 p
 p.csd <- p
@@ -340,7 +352,7 @@ p <- ggplot(df, aes(x=Size, y=Proportion)) + theme_classic() +
   geom_segment(data = df.seg3, aes(x=x, y=y, xend=xend, yend=yend)) +
   geom_segment(data = df.seg4, aes(x=x, y=y, xend=xend, yend=yend), 
                arrow = arrow(length = unit(0.2, "cm"))) +
-  geom_line(aes(colour = Precision), size = 1) + 
+  geom_line(aes(colour = Precision), linewidth=1) + 
   scale_color_viridis_d(end = 0.9) +
   scale_x_continuous(breaks=nseq, 
             labels = c("10",  "",  "30", "", "50",  "", "70", "", "90", "", "150", "200", "300")) + 
@@ -356,10 +368,10 @@ p <- ggplot(df, aes(x=Size, y=Proportion)) + theme_classic() +
         legend.title=element_text(size = 18),
         panel.background = element_rect(fill="grey90")) +
   labs(x = "Sample size", y = "Proportion of estimates") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
     title = "Precision \n(within +/-)")) + # change legend title
-  # ggtitle("Estimation precision (\u03c1=0)") 
-  ggtitle("Estimation precision (rho=0)") 
+  ggtitle("Estimation precision (\u03c1=0)")
+  # ggtitle("Estimation precision (rho=0)") 
 p
 p.precision <- p
 ```
@@ -432,7 +444,7 @@ p <- ggplot(df, aes(x=Size, y=Proportion)) + theme_classic() +
   geom_segment(data = df.seg1, aes(x=x, y=y, xend=xend, yend=yend)) +
   geom_segment(data = df.seg2, aes(x=x, y=y, xend=xend, yend=yend),
                arrow = arrow(length = unit(0.2, "cm"))) +
-  geom_line(aes(colour = Precision), size = 1) + 
+  geom_line(aes(colour = Precision), linewidth=1) + 
   scale_color_viridis_d(end = 0.9) +
   scale_x_continuous(breaks=nseq, 
             labels = c("10",  "",  "30", "", "50",  "", "70", "", "90", "", "150", "200", "300")) + 
@@ -448,7 +460,7 @@ p <- ggplot(df, aes(x=Size, y=Proportion)) + theme_classic() +
         legend.title=element_text(size = 18),
         panel.background = element_rect(fill="grey90")) +
   labs(x = "Sample size", y = "Proportion of replications") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
     title = "Difference \n(at most)")) + # change legend title
   ggtitle("Replication precision") 
 p
@@ -522,11 +534,14 @@ df[[2]] <- factor(df[[2]], levels=unique(df[[2]]))
 
 # make plot
 p <- ggplot(df, aes(x, Density)) + theme_classic() +
-          geom_line(aes(colour = RHO), size = 1)  + 
+          geom_line(aes(colour = RHO), linewidth = 1)  + 
           scale_color_viridis_d(option = "C", end = 0.9) + 
           theme(axis.title.x = element_text(size = 18),
                 axis.text = element_text(size = 14, colour = "black"),
                 axis.title.y = element_text(size = 18),
+                axis.text.y = element_blank(),
+                axis.ticks.y = element_blank(),
+                panel.grid.minor.y = element_blank(),
                 legend.key.width = unit(1.5,"cm"),
                 legend.text = element_text(size = 16),
                 legend.title = element_text(size = 18),
@@ -537,12 +552,12 @@ p <- ggplot(df, aes(x, Density)) + theme_classic() +
                              breaks = seq(-1, 1, 0.2)) +
   labs(x = "Correlation estimates", y = "Density") +
   ggtitle("Correlation sampling distributions (n=30)") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
         title="Population \ncorrelation")) # change legend title
 p
 
 # save figure
-ggsave(filename='./figures/figure_samp_dist_rho.pdf',width=9,height=5) 
+# ggsave(filename='./figures/figure_samp_dist_rho.pdf',width=9,height=5) 
 ```
 
 ## Precision
@@ -556,7 +571,7 @@ df$Precision <- factor(df$Precision, levels=unique(df$Precision))
 
 # make plot
 p <- ggplot(df, aes(x=Rho, y=Proportion)) + theme_classic() +
-  geom_line(aes(colour = Precision), size = 1) + 
+  geom_line(aes(colour = Precision), linewidth = 1) + 
   scale_color_viridis_d(end = 0.9) +
   scale_x_continuous(breaks=rhoseq) + 
   scale_y_continuous(breaks=seq(0, 1, 0.1)) +
@@ -571,7 +586,7 @@ p <- ggplot(df, aes(x=Rho, y=Proportion)) + theme_classic() +
         legend.title=element_text(size = 18),
         panel.background = element_rect(fill="grey90")) +
   labs(x = "Population correlation", y = "Proportion of estimates") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
     title = "Precision \n(within +/-)")) + # change legend title
   ggtitle("Measurement precision (n=30)") 
 p
@@ -641,11 +656,14 @@ df[[2]] <- factor(df[[2]], levels=unique(df[[2]]))
 
 # make plot
 p <- ggplot(df, aes(x, Density)) + theme_classic() +
-          geom_line(aes(colour = SS), size = 1)  + 
+          geom_line(aes(colour = SS), linewidth = 1)  + 
           scale_color_viridis_d(option = "B", end = 0.9) + 
           theme(axis.title.x = element_text(size = 18),
                 axis.text = element_text(size = 14, colour = "black"),
                 axis.title.y = element_text(size = 18),
+                axis.text.y = element_blank(),
+                axis.ticks.y = element_blank(),
+                panel.grid.minor.y = element_blank(),
                 legend.key.width = unit(1.5,"cm"),
                 legend.text = element_text(size = 16),
                 legend.title = element_text(size = 18),
@@ -656,9 +674,9 @@ p <- ggplot(df, aes(x, Density)) + theme_classic() +
                              breaks = seq(-1, 1, 0.2)) +
   labs(x = "Correlation estimates", y = "Density") +
   # ggtitle("Correlation sampling distributions (rho=0.4)") +
-  # ggtitle("\u03c1=0.4") +
-  ggtitle("rho=0.4") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  ggtitle("\u03c1=0.4") +
+  # ggtitle("rho=0.4") +
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
         title="Sample size")) # change legend title
 p
 p.sd04 <- p
@@ -740,7 +758,7 @@ save(kde.r.ori, kde.r.cond,
      file = "./data/rpval.kde_04.RData")
 ```
 
-### Plot correlation estimates p<=0.05
+### Plot conditional correlation estimates
 ```{r}
 # get data
 load("./data/rpval.kde_04.RData")
@@ -757,11 +775,14 @@ df[[2]] <- factor(df[[2]], levels=unique(df[[2]]))
 
 # make plot
 p <- ggplot(df, aes(x, Density)) + theme_classic() +
-          geom_line(aes(colour = SS), size = 1)  + 
+          geom_line(aes(colour = SS), linewidth = 1)  + 
           scale_color_viridis_d(option = "B", end = 0.9) + 
           theme(axis.title.x = element_text(size = 18),
                 axis.text = element_text(size = 14, colour = "black"),
                 axis.title.y = element_text(size = 18),
+                axis.text.y = element_blank(),
+                axis.ticks.y = element_blank(),
+                panel.grid.minor.y = element_blank(),
                 legend.key.width = unit(1.5,"cm"),
                 legend.text = element_text(size = 16),
                 legend.title = element_text(size = 18),
@@ -772,9 +793,9 @@ p <- ggplot(df, aes(x, Density)) + theme_classic() +
                              breaks = seq(-1, 1, 0.2)) +
   labs(x = "Correlation estimates", y = "Density") +
   # ggtitle("Correlation sampling distributions") +
-  # ggtitle("\u03c1=0.4: p\u22640.05") +
-  ggtitle("rho=0.4: p<=0.05") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  ggtitle("\u03c1=0.4: p\u22640.05") +
+  # ggtitle("rho=0.4: p<=0.05") +
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
         title="Sample size")) # change legend title
 p
 p.csd04 <- p
@@ -833,7 +854,7 @@ p <- ggplot(df, aes(x=Size, y=Proportion)) + theme_classic() +
   geom_segment(data = df.seg3, aes(x=x, y=y, xend=xend, yend=yend)) +
   geom_segment(data = df.seg4, aes(x=x, y=y, xend=xend, yend=yend),
                arrow = arrow(length = unit(0.2, "cm"))) +
-  geom_line(aes(colour = Precision), size = 1) + 
+  geom_line(aes(colour = Precision), linewidth = 1) + 
   scale_color_viridis_d(end = 0.9) +
   scale_x_continuous(breaks=nseq, 
             labels = c("10",  "",  "30", "", "50",  "", "70", "", "90", "", "150", "200", "300")) + 
@@ -849,7 +870,7 @@ p <- ggplot(df, aes(x=Size, y=Proportion)) + theme_classic() +
         legend.title=element_text(size = 18),
         panel.background = element_rect(fill="grey90")) +
   labs(x = "Sample size", y = "Proportion of estimates") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
     title = "Precision \n(within +/-)")) + # change legend title
   # ggtitle("Measurement precision (\u03c1=0.4)") 
   ggtitle("Measurement precision (rho=0.4)") 
@@ -926,7 +947,7 @@ p <- ggplot(df, aes(x=Size, y=Proportion)) + theme_classic() +
   geom_segment(data = df.seg1, aes(x=x, y=y, xend=xend, yend=yend)) +
   geom_segment(data = df.seg2, aes(x=x, y=y, xend=xend, yend=yend),
                arrow = arrow(length = unit(0.2, "cm"))) +
-  geom_line(aes(colour = Precision), size = 1) + 
+  geom_line(aes(colour = Precision), linewidth = 1) + 
   scale_color_viridis_d(end = 0.9) +
   scale_x_continuous(breaks=nseq, 
             labels = c("10",  "",  "30", "", "50",  "", "70", "", "90", "", "150", "200", "300")) + 
@@ -942,7 +963,7 @@ p <- ggplot(df, aes(x=Size, y=Proportion)) + theme_classic() +
         legend.title=element_text(size = 18),
         panel.background = element_rect(fill="grey90")) +
   labs(x = "Sample size", y = "Proportion of replications") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
     title = "Difference \n(at most)")) + # change legend title
   # ggtitle("Replication precision (\u03c1=0.4)") 
 ggtitle("Replication precision (rho=0.4)") 
@@ -957,9 +978,7 @@ For 80% of replications to be at most 0.2 apart, we need at least `r round(appro
 # Summary figures
 
 ## Sampling distributions
-```{r eval=FALSE}
-require(Cairo)
-CairoPDF(file=('./figures/figure_samp_dist.pdf'),width=15,height=12)
+```{r, eval=FALSE}
 # combine panels into one figure
 cowplot::plot_grid(p.sd,  p.sd04, p.csd, p.csd04,
                           labels = c("A", "C", "B", "D"),
@@ -971,8 +990,9 @@ cowplot::plot_grid(p.sd,  p.sd04, p.csd, p.csd04,
                           scale=.95,
                           align = "h")
 # save figure
-# ggsave(filename=('./figures/figure_samp_dist.pdf'),width=15,height=12)
-dev.off()
+ggsave(filename=('./figures/fig_samp_dist.pdf'), width=15, height=12, device = cairo_pdf)
+# ggsave(filename=('./figures/fig_samp_dist.tiff'), width=15, height=12, dpi=300)
+# then save to tiff -- don't know how to get rid of the grey background in the tiff file.
 ```
 
 ## Precision & replication
@@ -990,5 +1010,6 @@ cowplot::plot_grid(p.precision,  p.replication,
                           scale=.95,
                           align = "h")
 # save figure
-ggsave(filename=('./figures/figure_prec_rep.pdf'),width=7,height=10)
+ggsave(filename=('./figures/figure_prec_rep.pdf'),
+       width=7, height=10, device = cairo_pdf)
 ```

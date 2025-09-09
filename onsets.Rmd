@@ -3,8 +3,10 @@ title: "Sampling distributions for onset data"
 author: "Guillaume A. Rousselet"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    fig_caption: no
+  # html_document:
+  github_document:
+    # dev: CairoPDF
+    # fig_caption: no
     number_sections: no
     toc: yes
     toc_depth: 2
@@ -17,7 +19,7 @@ source("./functions/theme_gar.txt") # define ggplot theme
 source("./functions/trimpval.txt") # get one-sample t-test on trimmed means
 source("./functions/functions.txt")
 library(tibble)
-library(cowplot)
+# library(cowplot)
 # install.packages("devtools")
 # devtools::install_github("GRousselet/rogme")
 library(rogme)
@@ -44,7 +46,7 @@ pop.hd15 <- hd(onsets, q = 0.15)
 ```
 
 # Illustrate sample
-```{r}
+```{r, fig.height=2, fig.width=7}
 set.seed(11) # for reproducible jitter
 # raw data
 df <- tibble(val = onsets, y = rep(1, pop.n))
@@ -141,7 +143,7 @@ save(nsim, nseq, simres.hd50, simres.hd15,
 
 ## Illustrate results
 
-```{r}
+```{r, fig.height=4, fig.width=10}
 load(file = "./data/onsets_sim.RData")
 
 df <- tibble(x = c(as.vector(simres.hd50),as.vector(simres.hd15)),
@@ -154,16 +156,21 @@ df$q <- keeporder(df$q)
 p <- ggplot(df, aes(x = x, colour = np)) + theme_gar +
   # geom_vline(xintercept = pop.tm.diff) +
   geom_line(stat = "density", size = 0.75) +
-  theme(legend.position = "bottom") +
-  guides(colour = guide_legend(override.aes = list(size = 3),
-                               title = "Number of participants")) +
+  theme(legend.position = "bottom",
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        legend.position.inside = c(0.25,0.8)) +
+  guides(colour = guide_legend(nrow=2, byrow=TRUE,
+                               override.aes = list(linewidth = 3),
+                               title = "Number of participants",
+                               position = "inside")) +
   scale_colour_viridis_d(option = "plasma", 
                          begin = 0, end = 0.7) + 
   facet_grid(cols = vars(q), scales = "free") +
   labs(x = "Group onset quantiles (ms)", y = "Density")
 pB <- p
 p
-
 ```
 
 What is the proportion of onsets estimates that are within +/- a certain value from the population onset quantile? 
@@ -291,10 +298,10 @@ p
 
 For a given precision, what is the probability to observe similar effects in two consecutive experiments? In other words, what is the probability that two measurements differ by at most a certain amount?
 
-The estimation uncertainty associated with small sample sizes leads to another problem: effects are not likely to replicate. A successful replication can be defined in several ways. Here I won’t consider the relatively trivial case of finding a statistically significant (p<0.05) effect going in the same direction in two experiments. Instead, let’s consider how close two estimates are. We can determine, given a certain level of precision, the probability to observe similar effects in two consecutive experiments. In other words, we can find the probability that two measurements differ by at most a certain amount. Not surprisingly, the results follow the same pattern as those observed in the previous figure: the probability to replicate (y-axis) increases with sample size (x-axis) and with the uncertainty we’re willing to accept (see legend with colour coded difference conditions).  
+The estimation uncertainty associated with small sample sizes leads to another problem: effects are not likely to replicate. A successful replication can be defined in several ways. Here I won’t consider the relatively trivial case of finding a statistically significant ($p\leq0.05$) effect going in the same direction in two experiments. Instead, let’s consider how close two estimates are. We can determine, given a certain level of precision, the probability to observe similar effects in two consecutive experiments. In other words, we can find the probability that two measurements differ by at most a certain amount. Not surprisingly, the results follow the same pattern as those observed in the previous figure: the probability to replicate (y-axis) increases with sample size (x-axis) and with the uncertainty we’re willing to accept (see legend with colour coded difference conditions).  
 
 ## Differences
-```{r}
+```{r, fig.height=4, fig.width=10}
 df <- tibble(x = c(as.vector(simres.rep.hd50),as.vector(simres.rep.hd15)),
              np = factor(rep(rep(nseq, each = nsim),2)),
              q = factor(rep(c("50th","15th"), each = nsim * length(nseq)))
@@ -305,8 +312,11 @@ df$q <- keeporder(df$q)
 p <- ggplot(df, aes(x = x, colour = np)) + theme_gar +
   # geom_vline(xintercept = pop.tm.diff) +
   geom_line(stat = "density", size = 0.75) +
-  theme(legend.position = "bottom") +
-  guides(colour = guide_legend(override.aes = list(size = 3),
+  theme(legend.position = "bottom",
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.minor.y = element_blank()) +
+  guides(colour = guide_legend(override.aes = list(linewidth = 3),
                                title = "Number of participants")) +
   scale_colour_viridis_d(option = "plasma", 
                          begin = 0, end = 0.7) + 
@@ -429,18 +439,20 @@ p
 ```
 
 # Summary figure
-```{r, eval = FALSE}
+```{r, eval=FALSE}
 
-legend <- cowplot::get_legend(pB)
+# get_legend doesn't work here
+# legend.toplot <- cowplot::get_plot_component(pC, legend)
 
 cowplot::plot_grid(pA, 
-                   pB + theme(legend.position = "none"), 
+                   pB, 
                    pC + theme(legend.position = "none"), 
-                   legend,
-                    labels = c("A", "B", "C", NA),
+                   # legend.toplot,
+                    # labels = c("A", "B", "C", NA),
+                   labels = c("A", "B", "C"),
                     ncol = 1,
-                    nrow = 4,
-                    rel_heights = c(1/3, 1, 1, 1/4),
+                    nrow = 3,
+                    rel_heights = c(1/2, 1, 1),
                     label_size = 20,
                     align = 'v',
                     axis = 'l',
@@ -448,7 +460,7 @@ cowplot::plot_grid(pA,
                     scale = 1)
 
 # save figure
-ggsave(filename=('./figures/figure_onsets.pdf'),width=10,height=15)
+ggsave(filename=('./figures/fig_onsets.tiff'),width=10, height=10, dpi=300)
 ```
 
 

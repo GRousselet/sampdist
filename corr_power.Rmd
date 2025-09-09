@@ -3,7 +3,9 @@ title: "Correlation estimation: power"
 author: "Guillaume A. Rousselet"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
+  # html_document:
+  github_document:
+    # dev: CairoPDF
     number_sections: no
     toc: yes
     toc_depth: 2
@@ -14,8 +16,8 @@ output:
 library(ggplot2)
 library(tibble)
 library(dplyr)
-# library(cowplot)
-# library(Cairo)
+library(cowplot)
+library(Cairo)
 ```
 
 ```{r}
@@ -23,11 +25,40 @@ sessionInfo()
 ```
 
 # Resources for power analyses
+
+Sommet N, Weissman DL, Cheutin N, Elliot AJ. How Many Participants Do I Need to Test an Interaction? Conducting an Appropriate Power Analysis and Achieving Sufficient Power to Detect an Interaction. Advances in Methods and Practices in Psychological Science. 2023;6(3). doi:10.1177/25152459231178728
+
 https://www.statmethods.net/stats/power.html
+
 https://cran.r-project.org/web/packages/pwr/vignettes/pwr-vignette.html
+
 http://www.sample-size.net/correlation-sample-size/
 
+A non-technical guide to performing power analysis in R
+https://www.youtube.com/watch?v=ZIjOG8LTTh8
+
+How Many Participants Do We Have to Include in Properly Powered Experiments? A Tutorial of Power Analysis with Reference Tables
+https://pubmed.ncbi.nlm.nih.gov/31517234/
+
+Understanding Mixed-Effects Models Through Data Simulation
+https://journals.sagepub.com/doi/full/10.1177/2515245920965119
+
+Kumle, L., Võ, M. L.-H., & Draschkow, D. (2021). Estimating power in (generalized) linear mixed models: An open introduction and tutorial in R. Behavior Research Methods, 53(6), 2528–2543. https://doi.org/10.3758/s13428-021-01546-0
+
+Power Analysis with Superpower
+https://aaroncaldwell.us/SuperpowerBook/
+
+A Practical Guide to Statistical Power and Sample Size Calculations in R
+https://cran.r-project.org/web/packages/pwrss/vignettes/examples.html
+
+Simulation-Based Power Analysis for Factorial Analysis of Variance Designs
+https://journals.sagepub.com/doi/full/10.1177/2515245920951503
+
+But remember that all standard power calculators assume parametric tests and ideal conditions. That means that in practice, your power is lower than you think
+https://garstats.wordpress.com/2017/11/28/your-power-is-lower-than-you-think/
+
 # Examples of homoscedastic distributions
+
 We look at examples of n=1000 bivariate distributions from populations with known correlations, with rho increasing from 0.1 to 0.9 in steps of 0.1. For each rho, we draw a random sample and plot *Y* as a function of *X*. The variances of the two correlated variables are independent - there is homoscedasticity. Later we will look at an heteroscedasticity case: the variance of *Y* will vary as a function of *X*.
 ```{r}
 set.seed(21)
@@ -136,8 +167,10 @@ save(res.power,
      file = "./data/corr_power.RData")
 ```
 
+To generate data that are correlated but not normal, things get much more complicated. See Rousselet et al. (2023) for an example, in which I adapted code from Ruscio & Kaczetow (2008).
+
 ## Plot results
-Power increases with sample size and with rho. When rho = 0, the proportion of positive tests is the proportion of false positives. These should be around 0.05 for a test with alpha = 0.05. This is the case here, as Pearson's correlation is well behaved for bivariate normal data. 
+Power increases with sample size and with rho. When $\rho = 0$, the proportion of positive tests is the proportion of false positives. These should be around 0.05 for a test with alpha = 0.05. This is the case here, as Pearson's correlation is well behaved for bivariate normal data. 
 ```{r}
 # get data
 load("./data/corr_power.RData")
@@ -153,7 +186,7 @@ df$Rho <- factor(df$Rho, levels=unique(df$Rho))
 
 # make plot
 p <- ggplot(df, aes(Size, Power)) + theme_classic() +
-          geom_line(aes(colour = Rho), size = 1)  + 
+          geom_line(aes(colour = Rho), linewidth = 1)  + 
           geom_hline(yintercept = 0.05) +
           scale_color_viridis_d(end = 0.9) + 
           theme(axis.title.x = element_text(size = 18),
@@ -171,7 +204,7 @@ p <- ggplot(df, aes(Size, Power)) + theme_classic() +
   labs(x = "Sample size", y = "Proportion of positive tests") +
   # ggtitle("Power in the homoscedastic case") +
   ggtitle("Power curves") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
         title="Population\ncorrelation")) # change legend title
 p
 
@@ -223,7 +256,7 @@ p <- ggplot(df, aes(Size, Power)) + theme_classic() +
           geom_segment(data = df.seg3, aes(x=x, y=y, xend=xend, yend=yend)) +
           geom_segment(data = df.seg4, aes(x=x, y=y, xend=xend, yend=yend), 
                arrow = arrow(length = unit(0.2, "cm"))) +
-          geom_line(aes(colour = Rho), size = 1)  + 
+          geom_line(aes(colour = Rho), linewidth = 1)  + 
           geom_hline(yintercept = 0.05) +
           scale_color_viridis_d(end = 0.9) + 
           theme(axis.title.x = element_text(size = 18),
@@ -241,7 +274,7 @@ p <- ggplot(df, aes(Size, Power)) + theme_classic() +
   labs(x = "Sample size", y = "Proportion of positive tests") +
   # ggtitle("Power in the homoscedastic case") +
   ggtitle("Power curves") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
         title="Population\ncorrelation")) # change legend title
 p
 p.power.homo <- p
@@ -252,9 +285,7 @@ p.power.homo <- p
 
 ## Summary figure: precision & power
 ```{r eval = FALSE}
-require(Cairo)
-require(cowplot)
-CairoPDF(file=('./figures/figure_precision.pdf'),width=15,height=6)
+# require(cowplot)
 # combine panels into one figure
 cowplot::plot_grid(p.precision,  p.power.homo,
                           labels = c("A", "B"),
@@ -266,8 +297,8 @@ cowplot::plot_grid(p.precision,  p.power.homo,
                           scale=.95,
                           align = "h")
 # save figure
-# ggsave(filename=('./figures/figure_precision.pdf'),width=15,height=6)
-dev.off()
+# ggsave(filename='./figures/fig_precision.tiff', width=15, height=6, dpi=300)
+ggsave(filename='./figures/fig_precision.pdf', width=15, height=6, device = cairo_pdf)
 ```
 
 
@@ -330,7 +361,6 @@ ggplot(df, aes(x = x, y = y)) + theme_classic() +
 # save figure
 # ggsave(filename = './figures/demo_wilcox_dist.pdf', width = 9, height = 7)
 ```
-
 
 ### False positives
 
@@ -396,7 +426,7 @@ df$Var <- factor(df$Var, levels=unique(df$Var))
 
 # make plot
 p <- ggplot(df, aes(Size, Power)) + theme_classic() +
-          geom_line(aes(colour = Var), size = 1)  + 
+          geom_line(aes(colour = Var), linewidth = 1)  + 
           geom_hline(yintercept = 0.05) +
           scale_colour_manual(values = c("dodgerblue4", "orange1")) + 
           theme(axis.title.x = element_text(size = 18),
@@ -405,7 +435,7 @@ p <- ggplot(df, aes(Size, Power)) + theme_classic() +
                 legend.key.width = unit(1.5,"cm"),
                 legend.text = element_text(size = 16),
                 legend.title = element_text(size = 18),
-                legend.position = "right",
+                legend.position = "bottom",
                 plot.title = element_text(size = 20, colour = "black"),
                 panel.background = element_rect(fill="grey90")) +
    scale_x_continuous(breaks = nseq, labels = xlabels) +
@@ -413,14 +443,13 @@ p <- ggplot(df, aes(Size, Power)) + theme_classic() +
                              breaks = c(0, 0.05, seq(0.1, 1, 0.1))) +
   labs(x = "Sample size", y = "False positives") +
   ggtitle("Rho = 0") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
         title="Variance")) # change legend title
 p
 
 # save figure
 # ggsave(filename='./figures/figure_power_hetero_wilcox.pdf',width=9,height=5) 
 ```
-
 
 # Examples of heteroscedastic distributions
 Let's consider another heteroscedastic situation, in which the variance of *Y* increases linearly with *X*. This could correspond for instance to situations in which cognitive performance or income are correlated with age - we might expect the variance amongst participants to increase with age.
@@ -615,7 +644,7 @@ df$var <- factor(df$var, levels=unique(df$var))
 
 # make plot
 p <- ggplot(df, aes(Size, Power)) + theme_classic() +
-          geom_line(aes(colour = var), size = 1)  + 
+          geom_line(aes(colour = var), linewidth = 1)  + 
           geom_hline(yintercept = 0.05) +
           scale_color_viridis_d(end = 0.9) + 
           theme(axis.title.x = element_text(size = 18),
@@ -632,7 +661,7 @@ p <- ggplot(df, aes(Size, Power)) + theme_classic() +
                              breaks = seq(0, 0.1, 0.01)) +
   labs(x = "Sample size", y = "Proportion of false positives") +
   ggtitle("Rho = 0") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
         title="Variance")) # change legend title
 p
 
@@ -706,7 +735,7 @@ df$var <- factor(df$var, levels=unique(df$var))
 
 # make plot
 p <- ggplot(df, aes(Size, Power)) + theme_classic() +
-          geom_line(aes(colour = var), size = 1)  + 
+          geom_line(aes(colour = var), linewidth = 1)  + 
           geom_hline(yintercept = 0.05) +
           scale_color_viridis_d(end = 0.9) + 
           theme(axis.title.x = element_text(size = 18),
@@ -723,7 +752,7 @@ p <- ggplot(df, aes(Size, Power)) + theme_classic() +
                              breaks = c(0, 0.05, seq(0.1, 1, 0.1))) +
   labs(x = "Sample size", y = "Proportion of true positives") +
   ggtitle("Rho = 0.4") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
         title="Variance")) # change legend title
 p
 
@@ -747,7 +776,7 @@ df$var <- factor(df$var, levels=unique(df$var))
 
 # make plot
 p <- ggplot(df, aes(Size, Power)) + theme_classic() +
-          geom_line(aes(colour = var), size = 1)  + 
+          geom_line(aes(colour = var), linewidth = 1)  + 
           geom_hline(yintercept = 0.05) +
           geom_hline(yintercept = 0.8) +
           geom_vline(xintercept = c(46, 59)) +
@@ -766,7 +795,7 @@ p <- ggplot(df, aes(Size, Power)) + theme_classic() +
                              breaks = c(0, 0.05, seq(0.1, 1, 0.1))) +
   labs(x = "Sample size", y = "Proportion of true positives") +
   ggtitle("Rho = 0.4") +
-  guides(colour = guide_legend(override.aes = list(size=3), # make thicker legend lines
+  guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
         title="Variance")) + # change legend title 
   coord_cartesian(xlim = c(0, 150), ylim = c(0.6, 1), expand = TRUE)
 
@@ -780,6 +809,10 @@ p
 Pernet, C.R., Wilcox, R. & Rousselet, G.A. (2012) Robust correlation analyses: false positive and power validation using a new open source matlab toolbox. Front Psychol, 3, 606.
 
 Rousselet, G.A. & Pernet, C.R. (2012) Improving standards in brain-behavior correlation analyses. Frontiers in human neuroscience, 6, 119.
+
+Rousselet, G. A., Pernet, C. R., & Wilcox, R. R. (2023). An introduction to the bootstrap: A versatile method to make inferences by using data-driven simulations. Meta-Psychology, 7. https://doi.org/10.15626/MP.2019.2058
+
+Ruscio, J., & Kaczetow, W. (2008). Simulating Multivariate Nonnormal Data Using an Iterative Algorithm. Multivariate Behavioral Research, 43(3), 355–381. https://doi.org/10.1080/00273170802285693
 
 Wilcox, R.R. (2012) Introduction to robust estimation and hypothesis testing. Academic Press, San Diego, CA.
 
