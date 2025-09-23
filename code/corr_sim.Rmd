@@ -376,6 +376,12 @@ p
 p.precision <- p
 ```
 
+Save figure
+```{r, eval=FALSE}
+ggsave(p.precision, filename='./figures/fig_precision.tiff',width=7, height=5, dpi=300) 
+```
+
+
 For 70% of estimates to be within +/- 0.1 of the true correlation value (between -0.1 and 0.1), we need at least `r round(approx(y=nseq,x=res.pre[4,],xout=0.70)$y)` observations.
 
 For 90% of estimates to be within +/- 0.2 of the true correlation value (between -0.2 and 0.2), we need at least `r round(approx(y=nseq,x=res.pre[8,],xout=0.90)$y)` observations.
@@ -557,7 +563,7 @@ p <- ggplot(df, aes(x, Density)) + theme_classic() +
 p
 
 # save figure
-# ggsave(filename='./figures/figure_samp_dist_rho.pdf',width=9,height=5) 
+# ggsave(filename='./figures/fig_samp_dist_rho.tiff',width=9,height=5,dpi=300) 
 ```
 
 ## Precision

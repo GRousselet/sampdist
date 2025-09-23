@@ -1,7 +1,7 @@
 Correlation estimation
 ================
 Guillaume A. Rousselet
-2025-09-09
+2025-09-23
 
 - [Dependencies](#dependencies)
 - [Define mode function](#define-mode-function)
@@ -62,32 +62,35 @@ library(beepr)
 sessionInfo()
 ```
 
-    ## R version 4.2.2 (2022-10-31)
-    ## Platform: x86_64-apple-darwin17.0 (64-bit)
-    ## Running under: macOS Big Sur ... 10.16
+    ## R version 4.5.1 (2025-06-13)
+    ## Platform: x86_64-apple-darwin20
+    ## Running under: macOS Sequoia 15.6.1
     ## 
     ## Matrix products: default
-    ## BLAS:   /Library/Frameworks/R.framework/Versions/4.2/Resources/lib/libRblas.0.dylib
-    ## LAPACK: /Library/Frameworks/R.framework/Versions/4.2/Resources/lib/libRlapack.dylib
+    ## BLAS:   /Library/Frameworks/R.framework/Versions/4.5-x86_64/Resources/lib/libRblas.0.dylib 
+    ## LAPACK: /Library/Frameworks/R.framework/Versions/4.5-x86_64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
     ## 
     ## locale:
     ## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+    ## 
+    ## time zone: Europe/London
+    ## tzcode source: internal
     ## 
     ## attached base packages:
     ## [1] stats     graphics  grDevices utils     datasets  methods   base     
     ## 
     ## other attached packages:
-    ## [1] beepr_1.3     Cairo_1.6-2   cowplot_1.1.1 tibble_3.2.1  ggplot2_3.5.1
+    ## [1] beepr_2.0     Cairo_1.6-5   cowplot_1.2.0 tibble_3.3.0  ggplot2_4.0.0
     ## 
     ## loaded via a namespace (and not attached):
-    ##  [1] rstudioapi_0.14   knitr_1.50        magrittr_2.0.3    tidyselect_1.2.1 
-    ##  [5] munsell_0.5.1     colorspace_2.1-1  R6_2.6.1          rlang_1.1.5      
-    ##  [9] fastmap_1.2.0     stringr_1.5.1     dplyr_1.1.4       tools_4.2.2      
-    ## [13] grid_4.2.2        gtable_0.3.6      xfun_0.51         audio_0.1-10     
-    ## [17] cli_3.6.4         withr_3.0.2       htmltools_0.5.8.1 yaml_2.3.10      
-    ## [21] digest_0.6.37     lifecycle_1.0.4   vctrs_0.6.5       glue_1.8.0       
-    ## [25] evaluate_1.0.3    rmarkdown_2.29    stringi_1.8.3     compiler_4.2.2   
-    ## [29] pillar_1.10.1     generics_0.1.3    scales_1.3.0      pkgconfig_2.0.3
+    ##  [1] vctrs_0.6.5        cli_3.6.5          knitr_1.50         rlang_1.1.6       
+    ##  [5] xfun_0.53          generics_0.1.4     S7_0.2.0           glue_1.8.0        
+    ##  [9] htmltools_0.5.8.1  scales_1.4.0       rmarkdown_2.29     grid_4.5.1        
+    ## [13] evaluate_1.0.5     fastmap_1.2.0      yaml_2.3.10        lifecycle_1.0.4   
+    ## [17] compiler_4.5.1     dplyr_1.1.4        RColorBrewer_1.1-3 pkgconfig_2.0.3   
+    ## [21] farver_2.1.2       digest_0.6.37      R6_2.6.1           tidyselect_1.2.1  
+    ## [25] pillar_1.11.0      magrittr_2.0.4     withr_3.0.2        tools_4.5.1       
+    ## [29] gtable_0.3.6       audio_0.1-11
 
 # Define mode function
 
@@ -313,16 +316,6 @@ p <- ggplot(df, aes(x, Density)) + theme_classic() +
   # ggtitle("rho=0") +
   guides(colour = guide_legend(override.aes = list(linewidth=3), # make thicker legend lines
         title="Sample size")) # change legend title
-```
-
-    ## Warning: A numeric `legend.position` argument in `theme()` was deprecated in ggplot2
-    ## 3.5.0.
-    ## ℹ Please use the `legend.position.inside` argument of `theme()` instead.
-    ## This warning is displayed once every 8 hours.
-    ## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
-    ## generated.
-
-``` r
 p.sd <- p
 p
 ```
@@ -536,6 +529,12 @@ p
 p.precision <- p
 ```
 
+Save figure
+
+``` r
+ggsave(p.precision, filename='./figures/fig_precision.tiff',width=7, height=5, dpi=300) 
+```
+
 For 70% of estimates to be within +/- 0.1 of the true correlation value
 (between -0.1 and 0.1), we need at least 110 observations.
 
@@ -634,7 +633,7 @@ p <- ggplot(df, aes(x=Size, y=Proportion)) + theme_classic() +
 p
 ```
 
-![](corr_sim_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](corr_sim_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 ``` r
 p.replication <- p
@@ -736,11 +735,11 @@ p <- ggplot(df, aes(x, Density)) + theme_classic() +
 p
 ```
 
-![](corr_sim_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](corr_sim_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 ``` r
 # save figure
-# ggsave(filename='./figures/figure_samp_dist_rho.pdf',width=9,height=5) 
+# ggsave(filename='./figures/fig_samp_dist_rho.tiff',width=9,height=5,dpi=300) 
 ```
 
 ## Precision
@@ -776,7 +775,7 @@ p <- ggplot(df, aes(x=Rho, y=Proportion)) + theme_classic() +
 p
 ```
 
-![](corr_sim_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](corr_sim_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 ``` r
 # save figure
@@ -873,7 +872,7 @@ p <- ggplot(df, aes(x, Density)) + theme_classic() +
 p
 ```
 
-![](corr_sim_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](corr_sim_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 ``` r
 p.sd04 <- p
@@ -1003,7 +1002,7 @@ p <- ggplot(df, aes(x, Density)) + theme_classic() +
 p
 ```
 
-![](corr_sim_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
+![](corr_sim_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 ``` r
 p.csd04 <- p
@@ -1102,7 +1101,7 @@ p <- ggplot(df, aes(x=Size, y=Proportion)) + theme_classic() +
 p
 ```
 
-![](corr_sim_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+![](corr_sim_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
 
 ``` r
 # save figure
@@ -1207,7 +1206,7 @@ ggtitle("Replication precision (rho=0.4)")
 p
 ```
 
-![](corr_sim_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
+![](corr_sim_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
 
 ``` r
 # save figure

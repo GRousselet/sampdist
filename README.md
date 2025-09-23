@@ -21,11 +21,11 @@ The notebooks contain code to reproduce the figures and analyses presented in th
 |Notebook|Description|Figures|
 |-----|-----|-----|
 |[`lognormal`](docs/lognormal.md)|introduction to sampling distributions|Figure 1 (`fig_lognormal`)|
-|[`corr_sim`](docs/corr_sim.md)|correlation simulations|Figures 2 (`fig_rand_corr`), 3 (`fig_samp_dist`), 4A (`fig_precision`, full figure 4 generated in the `corr_power` notebook), 5 (`fig_samp_dist_rho`)|
-|[`corr_power`](docs/corr_power.md)|estimation precision and power analyses|Figure 4B (`fig_precision`)|
+|[`corr_sim`](docs/corr_sim.md)|correlation simulations|Figures 2 (`fig_rand_corr`), 3 (`fig_samp_dist`), 4 (`fig_precision`, extended figure 4 generated in the `corr_power` notebook), 5 (`fig_samp_dist_rho`)|
+|[`corr_power`](docs/corr_power.md)|estimation precision and power analyses|Figure 4B, not in article|
 |[`pc`](docs/pc.md)|percent correct data|Figure 6 (`fig_pc`)|
 |[`onsets`](docs/onsets.md)|ERP onset data|Figure 7 (`fig_onsets`)|
-|[`flp`](docs/flp.md)|Reaction time data|Figure 8 (`fig_flp`), 9 (`fig_flp_simbias`)|
+|[`flp`](docs/flp.md)|Reaction time data|Figure 8 (`fig_flp`)|
 
 # R packages needed
 - `ggplot2`
